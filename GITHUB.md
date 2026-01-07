@@ -23,7 +23,7 @@ git commit -m "🎉 Initial commit - Freebox Torrent Manager v1.0.0"
 
 ```bash
 # Remplacer YOUR_USERNAME par votre nom d'utilisateur GitHub
-git remote add origin https://github.com/YOUR_USERNAME/freebox-torrent-manager.git
+git remote add origin https://github.com/AsiliskServers/freebox-torrent-manager.git
 
 # Vérifier
 git remote -v

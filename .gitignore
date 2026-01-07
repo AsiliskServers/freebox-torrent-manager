@@ -36,8 +36,7 @@ pnpm-debug.log*
 !.env.example
 
 # IDE
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea/
 *.sublime-workspace
 

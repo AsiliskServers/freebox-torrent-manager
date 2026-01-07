@@ -13,6 +13,7 @@ interface DownloadsState {
   isLoading: boolean;
   error: string | null;
   selectedDownload: Download | null;
+  downloadDir: string | null; // Dossier de téléchargement par défaut (base64)
 }
 
 export const useDownloadsStore = defineStore('downloads', {
@@ -21,7 +22,8 @@ export const useDownloadsStore = defineStore('downloads', {
     stats: null,
     isLoading: false,
     error: null,
-    selectedDownload: null
+    selectedDownload: null,
+    downloadDir: null
   }),
   
   getters: {
@@ -156,6 +158,89 @@ export const useDownloadsStore = defineStore('downloads', {
     },
     
     /**
+     * Récupérer la configuration du downloader
+     * Permet d'obtenir le dossier de téléchargement par défaut
+     */
+    async fetchConfig() {
+      const authStore = useAuthStore();
+      const sessionToken = authStore.getSessionToken();
+      
+      if (!sessionToken) return;
+      
+      try {
+        const response = await $fetch<FreeboxResponse<any>>('/api/downloads/config', {
+          headers: {
+            'X-Fbx-App-Auth': sessionToken
+          }
+        });
+        
+        if (response.success && response.result && response.result.download_dir) {
+          this.downloadDir = response.result.download_dir;
+          console.log('[DOWNLOADS] Configuration récupérée - Dossier de base (base64):', this.downloadDir);
+          if (this.downloadDir) {
+            try {
+              const decodedDir = atob(this.downloadDir);
+              console.log('[DOWNLOADS] Dossier de base (décodé):', decodedDir);
+            } catch (e) {
+              console.error('[DOWNLOADS] Erreur décodage base64:', e);
+            }
+          }
+        }
+        
+      } catch (error) {
+        console.error('[DOWNLOADS] Erreur lors de la récupération de la config:', error);
+      }
+    },
+    
+    /**
+     * Construire le chemin complet de téléchargement
+     * Si l'utilisateur fournit un sous-dossier, on le concatène avec le dossier par défaut
+     */
+    buildDownloadPath(subPath?: string): string | undefined {
+      if (!subPath || subPath.trim() === '') {
+        return undefined; // Utiliser le dossier par défaut de la Freebox
+      }
+      
+      // Si on n'a pas encore récupéré la config, on ne peut pas construire le chemin
+      if (!this.downloadDir) {
+        console.warn('[DOWNLOADS] buildDownloadPath: downloadDir non disponible, utilisation du dossier par défaut');
+        return undefined;
+      }
+      
+      try {
+        // Décoder le dossier par défaut depuis base64
+        const baseDir = atob(this.downloadDir);
+        
+        // Nettoyer le sous-chemin
+        let cleanSubPath = subPath.trim();
+        
+        // Enlever le / de début si présent
+        if (cleanSubPath.startsWith('/')) {
+          cleanSubPath = cleanSubPath.substring(1);
+        }
+        
+        // Construire le chemin complet
+        let fullPath = baseDir;
+        if (!fullPath.endsWith('/')) {
+          fullPath += '/';
+        }
+        fullPath += cleanSubPath;
+        
+        console.log('[DOWNLOADS] Chemin construit:', {
+          baseDir,
+          subPath: cleanSubPath,
+          fullPath
+        });
+        
+        // Encoder en base64 pour l'API Freebox
+        return btoa(fullPath);
+      } catch (error) {
+        console.error('[DOWNLOADS] Erreur lors de la construction du chemin:', error);
+        return undefined;
+      }
+    },
+    
+    /**
      * Ajouter un téléchargement via URL/magnet
      */
     async addDownload(url: string, downloadDir?: string) {
@@ -172,6 +257,9 @@ export const useDownloadsStore = defineStore('downloads', {
       }
       
       try {
+        // Construire le chemin complet si un sous-dossier est fourni
+        const fullPath = this.buildDownloadPath(downloadDir);
+        
         const response = await $fetch<FreeboxResponse<Download>>('/api/downloads', {
           method: 'POST',
           headers: {
@@ -179,7 +267,7 @@ export const useDownloadsStore = defineStore('downloads', {
           },
           body: {
             download_url: url,
-            download_dir: downloadDir
+            download_dir: fullPath
           }
         });
         
@@ -218,6 +306,9 @@ export const useDownloadsStore = defineStore('downloads', {
       }
       
       try {
+        // Construire le chemin complet si un sous-dossier est fourni
+        const fullPath = this.buildDownloadPath(downloadDir);
+        
         // Joindre les URLs avec des retours à la ligne
         const urlList = urls.join('\n');
         
@@ -228,7 +319,7 @@ export const useDownloadsStore = defineStore('downloads', {
           },
           body: {
             download_url_list: urlList,
-            download_dir: downloadDir
+            download_dir: fullPath
           }
         });
         
@@ -266,14 +357,16 @@ export const useDownloadsStore = defineStore('downloads', {
       try {
         console.log('[DOWNLOADS] Uploading file:', file.name, 'Size:', file.size);
         
+        // Construire le chemin complet si un sous-dossier est fourni
+        const fullPath = this.buildDownloadPath(downloadDir);
+        
         // Créer un FormData pour l'upload multipart
         const formData = new FormData();
         formData.append('download_file', file);
         
-        if (downloadDir) {
-          // Encoder le chemin en base64 comme dans l'exemple de l'API
-          const encodedDir = btoa(downloadDir);
-          formData.append('download_dir', encodedDir);
+        if (fullPath) {
+          // Le chemin est déjà encodé en base64 par buildDownloadPath
+          formData.append('download_dir', fullPath);
         }
         
         const response = await $fetch<FreeboxResponse<Download>>('/api/downloads/upload', {

@@ -78,7 +78,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div v-if="stats" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div v-if="stats" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <UCard>
           <div class="flex items-center justify-between">
             <div>
@@ -92,20 +92,30 @@
         <UCard>
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">En partage</p>
-              <p class="text-2xl font-bold">{{ stats.nb_tasks_seeding || 0 }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">En cours</p>
+              <p class="text-2xl font-bold">{{ stats.nb_tasks_downloading || 0 }}</p>
             </div>
-            <UIcon name="i-heroicons-arrow-up-circle" class="w-8 h-8 text-green-500" />
+            <UIcon name="i-heroicons-arrow-down-tray" class="w-8 h-8 text-blue-500" />
           </div>
         </UCard>
         
         <UCard>
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">En cours</p>
-              <p class="text-2xl font-bold">{{ stats.nb_tasks_downloading || 0 }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">En attente</p>
+              <p class="text-2xl font-bold">{{ nbTasksQueued }}</p>
             </div>
-            <UIcon name="i-heroicons-arrow-down-tray" class="w-8 h-8 text-blue-500" />
+            <UIcon name="i-heroicons-clock" class="w-8 h-8 text-orange-500" />
+          </div>
+        </UCard>
+        
+        <UCard>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">En partage</p>
+              <p class="text-2xl font-bold">{{ stats.nb_tasks_seeding || 0 }}</p>
+            </div>
+            <UIcon name="i-heroicons-arrow-up-circle" class="w-8 h-8 text-green-500" />
           </div>
         </UCard>
         
@@ -198,7 +208,7 @@
           <UFormGroup label="Dossier de destination (optionnel)">
             <UInput
               v-model="newTorrentDir"
-              placeholder="/Téléchargements/..."
+              placeholder="Téléchargements"
             />
           </UFormGroup>
           
@@ -239,20 +249,26 @@
         </div>
         
         <template #footer>
-          <div class="flex justify-end space-x-2">
-            <UButton
-              color="gray"
-              variant="ghost"
-              @click="showAddModal = false"
-            >
-              Annuler
-            </UButton>
-            <UButton
-              @click="addTorrent"
-              :loading="isAdding"
-            >
-              Ajouter
-            </UButton>
+          <div class="flex justify-between items-center">
+            <div v-if="addTorrentError" class="text-sm text-red-500">
+              {{ addTorrentError }}
+            </div>
+            <div v-else></div>
+            <div class="flex space-x-2">
+              <UButton
+                color="gray"
+                variant="ghost"
+                @click="showAddModal = false"
+              >
+                Annuler
+              </UButton>
+              <UButton
+                @click="addTorrent"
+                :loading="isAdding"
+              >
+                Ajouter
+              </UButton>
+            </div>
           </div>
         </template>
       </UCard>
@@ -348,6 +364,7 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const searchQuery = ref('');
 const sortBy = ref('name');
 const sortOrder = ref<'asc' | 'desc'>('asc');
+const addTorrentError = ref('');
 
 const sortOptions = [
   { label: 'Nom', value: 'name' },
@@ -359,6 +376,23 @@ const sortOptions = [
 
 const isLoading = computed(() => downloadsStore.isLoading);
 const stats = computed(() => downloadsStore.stats);
+
+// Calculer le nombre de torrents en attente (queued + stopped)
+const nbTasksQueued = computed(() => {
+  return downloadsStore.downloads.filter(d => 
+    d.status === 'queued' || d.status === 'stopped'
+  ).length;
+});
+
+// Obtenir le dossier de téléchargement décodé
+const baseDownloadDir = computed(() => {
+  if (!downloadsStore.downloadDir) return null;
+  try {
+    return atob(downloadsStore.downloadDir);
+  } catch {
+    return null;
+  }
+});
 
 const tabs = [
   { label: 'Tous', value: 'all' },
@@ -383,8 +417,10 @@ const filteredDownloads = computed(() => {
       downloads = downloadsStore.activeDownloads;
       break;
     case 3:
-      // En attente
-      downloads = downloadsStore.queuedDownloads;
+      // En attente (queued + stopped)
+      downloads = downloadsStore.downloads.filter(d => 
+        d.status === 'queued' || d.status === 'stopped'
+      );
       break;
     case 4:
       // Terminés
@@ -439,9 +475,21 @@ const filteredDownloads = computed(() => {
   return downloads;
 });
 
+// Réinitialiser l'erreur et recharger la config quand on ouvre le modal
+watch(showAddModal, async (newValue) => {
+  if (newValue) {
+    addTorrentError.value = '';
+    // Recharger la configuration pour s'assurer d'avoir le dossier à jour
+    await downloadsStore.fetchConfig();
+  }
+});
+
 // Charger les données au montage
 onMounted(async () => {
   await refresh();
+  
+  // Charger la configuration pour obtenir le dossier par défaut
+  await downloadsStore.fetchConfig();
   
   // Actualiser les stats (débits) toutes les 2 secondes
   const statsInterval = setInterval(async () => {
@@ -470,6 +518,7 @@ async function addTorrent() {
   if (!newTorrentUrl.value.trim() && selectedFiles.value.length === 0) return;
   
   isAdding.value = true;
+  addTorrentError.value = ''; // Réinitialiser l'erreur
   
   try {
     if (selectedFiles.value.length > 0) {
@@ -508,10 +557,18 @@ async function addTorrent() {
     newTorrentDir.value = '';
     selectedFiles.value = [];
     isDragging.value = false;
+    addTorrentError.value = '';
   } catch (error: any) {
     console.error('Erreur lors de l\'ajout:', error);
     
-    // Afficher un toast avec le message d'erreur
+    // Afficher le message d'erreur dans le modal
+    if (error.message?.includes('exists') || error.message?.includes('déjà')) {
+      addTorrentError.value = 'Ce torrent est déjà présent';
+    } else {
+      addTorrentError.value = error.message || 'Impossible d\'ajouter le téléchargement';
+    }
+    
+    // Afficher aussi un toast
     const toast = useToast();
     toast.add({
       title: 'Erreur',

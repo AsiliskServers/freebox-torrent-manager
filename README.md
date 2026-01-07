@@ -2,6 +2,7 @@
 
 <div align="center">
 
+[![Version](https://img.shields.io/badge/version-1.1.0-blue)](https://github.com/AsiliskServers/freebox-torrent-manager/releases/tag/v1.1.0)
 [![Nuxt 3](https://img.shields.io/badge/Nuxt-3.20-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Vue 3](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vue.js&logoColor=white)](https://vuejs.org)
@@ -24,20 +25,23 @@
 - Gestion sécurisée des sessions
 
 ### 📊 Dashboard en temps réel
-- Statistiques globales (total, en cours, terminés, erreurs)
+- Statistiques globales (total, en cours, en attente, en partage, terminés, erreurs)
 - Mise à jour automatique toutes les 2 secondes
 - Bouton de rafraîchissement manuel
+- Compteur "En attente" incluant les torrents arrêtés
 
 ### ⬇️ Gestion des téléchargements
 - **Ajout flexible** : URL, liens magnet, fichiers .torrent
 - **Upload multiple** : plusieurs URLs ou fichiers en une fois
 - **Drag & Drop** : glissez-déposez vos .torrent
+- **Dossier de destination** : configuration dynamique avec concaténation automatique
+- **Détection de doublons** : message d'erreur inline lors de l'ajout
 - **Actions complètes** : démarrer, arrêter, reprendre, supprimer
 - **Suppression intelligente** : avec ou sans les fichiers téléchargés
 
 ### 🔍 Organisation
 - **Recherche** : filtrage instantané par nom
-- **Filtres** : par statut (tous, en partage, en cours, terminés, erreurs)
+- **Filtres** : par statut (tous, en partage, en cours, en attente, terminés, erreurs)
 - **Tri** : par nom, taille, ratio, temps restant, date d'ajout
 - **Ordre** : ascendant/descendant
 
@@ -274,7 +278,34 @@ npm run build
 
 ## 📝 Changelog
 
-Voir [CHANGELOG.md](./CHANGELOG.md) pour l'historique des versions.
+### v1.1.0 (2026-01-07)
+
+**New Features:**
+- 🎯 Dynamic download directory configuration with automatic path concatenation
+- 🔄 Real-time config refresh when opening add torrent modal
+- 📊 Enhanced "Queued" counter (now includes stopped torrents)
+- ⚠️ Inline error display for duplicate torrents in add modal
+- 📁 Custom download subdirectories with automatic full path construction
+
+**Improvements:**
+- Better download path management with base directory fetching
+- Improved error handling and user feedback
+- Enhanced statistics display with 6 status cards (added "Queued" card)
+- TypeScript type safety improvements with null checks
+
+**Bug Fixes:**
+- Fixed stopped torrents not appearing in "Queued" tab
+- Fixed TypeScript null safety issues in config fetching
+- Fixed config not updating when changed in Freebox settings during active session
+
+### v1.0.0 (2026-01-06)
+
+- 🎉 Initial release
+- Complete torrent management interface
+- Authentication with Freebox API
+- Real-time statistics and monitoring
+- Drag & drop torrent upload
+- Docker support
 
 ---
 

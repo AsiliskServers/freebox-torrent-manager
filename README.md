@@ -276,39 +276,6 @@ npm run build
 
 ---
 
-## 📝 Changelog
-
-### v1.1.0 (2026-01-07)
-
-**New Features:**
-- 🎯 Dynamic download directory configuration with automatic path concatenation
-- 🔄 Real-time config refresh when opening add torrent modal
-- 📊 Enhanced "Queued" counter (now includes stopped torrents)
-- ⚠️ Inline error display for duplicate torrents in add modal
-- 📁 Custom download subdirectories with automatic full path construction
-
-**Improvements:**
-- Better download path management with base directory fetching
-- Improved error handling and user feedback
-- Enhanced statistics display with 6 status cards (added "Queued" card)
-- TypeScript type safety improvements with null checks
-
-**Bug Fixes:**
-- Fixed stopped torrents not appearing in "Queued" tab
-- Fixed TypeScript null safety issues in config fetching
-- Fixed config not updating when changed in Freebox settings during active session
-
-### v1.0.0 (2026-01-06)
-
-- 🎉 Initial release
-- Complete torrent management interface
-- Authentication with Freebox API
-- Real-time statistics and monitoring
-- Drag & drop torrent upload
-- Docker support
-
----
-
 ## 🔒 Sécurité
 
 Pour signaler une vulnérabilité, consultez [SECURITY.md](./SECURITY.md).

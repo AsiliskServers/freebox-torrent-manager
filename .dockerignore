@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+.npm
+
+# Build outputs
+.output
+.nuxt
+dist
+.cache
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+.idea
+*.swp
+*.swo
+
+# Testing
+coverage
+
+# Local env files
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+
+# Token (ne pas inclure dans l'image)
+.freebox-token.json

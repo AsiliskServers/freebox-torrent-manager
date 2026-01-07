@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  freebox-torrent-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freebox-torrent-manager
+    ports:
+      - "3000:3000"
+    environment:
+      - NUXT_HOST=0.0.0.0
+      - NUXT_PORT=3000
+      - NUXT_PUBLIC_FREEBOX_API_URL=http://mafreebox.freebox.fr
+      - NODE_ENV=production
+    volumes:
+      # Persister le token d'authentification
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - freebox-network
+
+networks:
+  freebox-network:
+    driver: bridge

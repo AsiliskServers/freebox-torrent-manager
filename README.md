@@ -74,7 +74,7 @@
 
 ```bash
 # 1. Cloner le repository
-git clone https://github.com/your-username/freebox-torrent-manager.git
+git clone https://github.com/asiliskservers/freebox-torrent-manager.git
 cd freebox-torrent-manager
 
 # 2. Installer les dépendances
